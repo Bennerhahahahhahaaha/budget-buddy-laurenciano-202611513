@@ -1,4 +1,6 @@
 import streamlit as st
+import numpy as np
+import pandas as pd
 import dashboard_page
 import budget_page
 import expense_page
@@ -14,3 +16,5 @@ elif page == "Budget":
     budget_page.show_budget_page()
 elif page == "Expenses":
     expense_page.show_expense_page()
+
+

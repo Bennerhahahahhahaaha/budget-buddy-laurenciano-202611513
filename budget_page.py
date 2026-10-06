@@ -2,26 +2,23 @@ import streamlit as st
 import data_loader
 
 def show_budget_page():
-    st.title("Current Budget")
-    st.subheader("Monthly Budget Setup")
     budget = data_loader.load_budget_data()
-
+    st.title("Budget Overview")
+    total_budget = 0
+    
     months = []
     for entry in budget:
         if entry["month"] not in months:
             months.append(entry["month"])
-    month = st.selectbox("Select a month:", months)
-
     income_source = ""
-    income = 0.0
+    month = st.selectbox("Select Month:", months)
 
-    for entry in budget:
-        if entry["month"] == month:
-            income_source = entry["income_source"]
-            income = entry["income"]
-            break
+    monthly_budget = [entry for entry in budget if entry["month"] == month]
+
+    if monthly_budget:
+        income = monthly_bodget[0]['income]']
+    else:
+        income = 0
+   
+
     
-    st.text_input("Income Source:", value=income_source)
-    st.number_input("Income:", value=income, min_value=0.0)
-
-

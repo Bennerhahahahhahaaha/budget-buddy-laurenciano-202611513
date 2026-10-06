@@ -10,7 +10,6 @@ def show_budget_page():
         if entry["month"] not in months:
             months.append(entry["month"])
     month = st.selectbox("Select Month:", months)
-
     monthly_budget = [entry for entry in budget if entry["month"] == month]
  
     if monthly_budget:
@@ -39,4 +38,9 @@ def show_budget_page():
         st.write("Unallocated Income:", unallocated_income)
         st.error(f"You have overspent your budget by: {-unallocated_income}")
 
-    
+    if st.button("Save Budget"):
+        budget = [entry for entry in budget if entry["month"] != month]
+        budget.extend(edited_budget)
+
+        data_loader.save_budget_data(budget)
+        st.success("Budget Saved!")

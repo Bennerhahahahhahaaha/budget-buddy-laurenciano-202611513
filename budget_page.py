@@ -34,3 +34,6 @@ def show_budget_page():
         st.write("Unallocated Income:", unallocated_income)
         st.error(f"You have overspent your budget by: {-unallocated_income}")
     
+    st.write("Budget Entries for", month)
+    for entry in monthly_budget:
+        st.write(f"{entry['category']}: {entry['planned_amount']}")

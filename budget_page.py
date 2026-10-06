@@ -19,10 +19,15 @@ def show_budget_page():
         income = 0
  
     total_planned = 0
-    for entry in monthly_budget:
-        total_planned += entry['planned_amount']
-
-   
+    st.write("Budget Entries for", month)
+    edited_budget = st.data_editor(
+        monthly_budget,
+        use_container_width=True,
+        num_rows="dynamic"
+    )
+    for entry in edited_budget:
+        if entry['planned_amount']:
+            total_planned += entry['planned_amount']
     unallocated_income = income - total_planned
  
     st.write("Income:", income)
@@ -33,7 +38,5 @@ def show_budget_page():
     else:
         st.write("Unallocated Income:", unallocated_income)
         st.error(f"You have overspent your budget by: {-unallocated_income}")
+
     
-    st.write("Budget Entries for", month)
-    for entry in monthly_budget:
-        st.write(f"{entry['category']}: {entry['planned_amount']}")

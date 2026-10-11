@@ -36,6 +36,18 @@ def get_starting_rows(month_entries):
         rows.append({"category": entry["category"], "planned_amount": entry["planned_amount"]})
     return rows
 
+def budget_rows(month, income_source, income, rows):
+    search = []
+    for row in rows:
+        search.append({
+            "month": month,
+            "income_source": income_source,
+            "income": income,
+            "category": row["category"],
+            "planned_amount": row["planned_amount"]
+        })
+    return search
+
 def load_list(month, month_entries):
     if st.session_state.get("working_month") != month:
         st.session_state["working_month"] = month
@@ -75,9 +87,20 @@ def calculate_total_planned(rows):
         total += row["planned_amount"]
     return total
 
+@st.dialog("Notice")
+def message_dialog(type, message):
+    if type == "success":
+        st.success(message)
+    else:
+        st.error(message)
+    if st.button("Okay", type="primary"):
+        st.rerun()
+
 def show_budget_page():
     budget = data_loader.load_budget_data()
     st.title("Current Budget")
+
+
     
     today = date.today()
     saved_years = get_years(budget)
@@ -130,3 +153,15 @@ def show_budget_page():
         st.info("All income has been allocated")
     else:
         st.error(f"Your planned expenses exceed your income by ₱{-unallocated_income:,.2f}")
+
+    if st.button("Save Budget", type="primary"):
+        if income_source.strip() == "":
+            message_dialog("error", "Please enter an income source.")
+        elif len(rows) == 0:
+            message_dialog("error", "Add at least one category.")
+        else:
+            new_rows = budget_rows(month, income_source.strip(), income, rows)
+            budget = [e for e in budget if e["month"] != month]
+            budget.extend(new_rows)
+            data_loader.save_budget_data(budget)
+            message_dialog("success", f"Budget for {month} saved!")

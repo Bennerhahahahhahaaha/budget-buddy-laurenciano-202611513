@@ -18,6 +18,18 @@ def get_years(budget):
     years.sort()
     return years
 
+def get_categories(rows):
+    #selectbox for the dialog, same as get years
+    used = []
+    for row in rows:
+        used.append(row["category"].lower())
+
+    options = []
+    for c in CATEGORIES:
+        if c.lower() not in used:
+            options.append(c)
+    return options
+
 def parse_year(choice, default):
     if choice is None:
         return default
@@ -29,8 +41,6 @@ def parse_year(choice, default):
     return None
 
 def get_starting_rows(month_entries):
-    if len(month_entries) == 0:
-        return [{"category": c, "planned_amount": 0.0} for c in CATEGORIES]
     rows = []
     for entry in month_entries:
         rows.append({"category": entry["category"], "planned_amount": entry["planned_amount"]})
@@ -53,31 +63,60 @@ def load_list(month, month_entries):
         st.session_state["working_month"] = month
         st.session_state["working_rows"] = get_starting_rows(month_entries)
 
-@st.dialog("Add category")
-def add_category_dialog():
+@st.dialog("Category")
+def category_dialog(index=None):
     rows = st.session_state["working_rows"]
 
-    name = st.text_input("Category name", placeholder="e.g. Transportation")
-    name_error = validate_categoryname(rows, name)
-    if name_error and name !="":
+    if index is None:
+        choice = st.selectbox("Category", get_categories(rows), index=None,placeholder="Pick or type a category", accept_new_options=True)
+        if choice:
+            name = choice
+        else:
+            name = ""
+        amount_default = None
+    else:
+        name = st.text_input("Category name", value=rows[index]["category"])
+        amount_default = rows[index]["planned_amount"]
+
+    name_error = validate_categoryname(rows, name, index)
+    if name_error and name != "":
         st.caption(f":red[{name_error}]")
-    
-    amount = st.number_input("Planned amount", min_value=0.0, value=None, step=100.0, placeholder="e.g. 100.00")
+
+    amount = st.number_input("Planned amount", min_value=0.0, value=amount_default, step=100.0, placeholder="e.g. 100.00")
 
     error = name_error is not None or amount is None
 
-    col_cancel, col_add = st.columns(2)
-    if col_cancel.button("Cancel"):
+    col_cancel, col_save = st.columns(2)
+    if col_cancel.button("Cancel", width="stretch"):
         st.rerun()
-    if col_add.button("Add", type="primary", disabled=error):
-        rows.append({"category": name.strip(), "planned_amount": amount})
+    if col_save.button("Save", type="primary", disabled=error, width="stretch"):
+        new_row = {"category": name.strip(), "planned_amount": amount}
+        if index is None:
+            rows.append(new_row)
+        else:
+            rows[index] = new_row
         st.rerun()
 
-def validate_categoryname(rows,name):
+def draw_category_rows(rows):
+    head_name, head_amount, _, _ = st.columns([4, 3, 1, 1])
+    head_name.caption("Category")
+    head_amount.caption("Planned amount")
+
+    for i in range(len(rows)):
+        col_name, col_amount, col_edit, col_remove = st.columns([4, 3, 1, 1])
+        col_name.write(rows[i]["category"])
+        col_amount.write(f"₱{rows[i]['planned_amount']:,.2f}")
+        if col_edit.button("p", key=f"edit_{i}"): #p is a placeholder for now
+            category_dialog(i)
+        if col_remove.button("✕", key=f"remove_{i}"): 
+            rows.pop(i)
+            st.rerun()
+
+def validate_categoryname(rows, name, skip_index=None):
     if name.strip() == "":
         return "Category name is required."
-    for row in rows:
-        if row["category"].lower() == name.strip().lower():
+    for i in range(len(rows)):
+        if i != skip_index and rows[i]["category"].lower() == name.strip().lower():
             return "That category already exists."
     return None
     
@@ -132,12 +171,12 @@ def show_budget_page():
 
     st.subheader(f"{month}'s Budget")
     if len(rows):
-        st.dataframe(rows, width="stretch", hide_index=True, column_order=["category", "planned_amount"])
+        draw_category_rows(rows)
     else:
-        st.info("No categories yet.")
-
+        st.info("No categories yet, add some!")
     if st.button("+ Add Category"):
-        add_category_dialog()
+        category_dialog()
+    
 
     total_planned = calculate_total_planned(rows)
     unallocated_income = income - total_planned

@@ -67,6 +67,19 @@ def category_dialog(index=None):
             rows[index] = new_row
         st.rerun()
 
+
+@st.dialog("Delete category")
+def confirm_delete_dialog(index):
+    category = st.session_state["working_rows"][index]["category"]
+    st.warning(f"Delete the category '{category}'? ""This change will affect the current unsaved budget.")
+
+    col_cancel, col_delete = st.columns(2)
+    if col_cancel.button("Cancel", width="stretch"):
+        st.rerun()
+    if col_delete.button("Delete", type="primary", width="stretch"):
+        st.session_state["working_rows"].pop(index)
+        st.rerun()
+
 def draw_month_picker():
     today = date.today()
     col_month, col_year = st.columns(2)
@@ -112,8 +125,7 @@ def draw_category_rows(rows):
         if col_edit.button("Edit", icon=":material/edit:", key=f"edit_{i}"):
             category_dialog(i)
         if col_remove.button("Delete", icon=":material/delete:", key=f"remove_{i}"):
-            rows.pop(i)
-            st.rerun()
+            confirm_delete_dialog(i)
 
 def submit_budget(budget, month, income_source, income, rows):
     if income_source.strip() == "":

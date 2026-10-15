@@ -23,7 +23,7 @@ def get_starting_rows(month_entries):
 def budget_rows(month, income_source, income, rows):
     entries = []
     for row in rows:
-        search.append({
+        entries.append({
             "month": month,
             "income_source": income_source,
             "income": income,
@@ -101,7 +101,7 @@ def draw_summary(income, total_planned, unallocated_income):
         st.error(f"Your planned expenses exceed your income by {format_pesos(-unallocated_income)}")
 
 def draw_category_rows(rows):
-    head_name, head_amount, _, _ = st.columns([4, 3, 1, 1])
+    head_name, head_amount, _, _ = st.columns([4, 3, 2, 2])
     head_name.caption("Category")
     head_amount.caption("Planned amount")
 
@@ -144,7 +144,7 @@ def calculate_unallocated(income, total_planned):
     return round(income - total_planned, 2) + 0.0
 
 @st.dialog("Notice")
-def message_dialog(type, message):
+def message_dialog(kind, message):
     if kind == "success":
         st.success(message)
     else:

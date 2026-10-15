@@ -21,7 +21,7 @@ def get_starting_rows(month_entries):
     return rows
 
 def budget_rows(month, income_source, income, rows):
-    search = []
+    entries = []
     for row in rows:
         search.append({
             "month": month,
@@ -30,7 +30,7 @@ def budget_rows(month, income_source, income, rows):
             "category": row["category"],
             "planned_amount": row["planned_amount"]
         })
-    return search
+    return entries
 
 def load_list(month, month_entries):
     if st.session_state.get("working_month") != month:
@@ -67,6 +67,39 @@ def category_dialog(index=None):
             rows[index] = new_row
         st.rerun()
 
+def draw_month_picker():
+    today = date.today()
+    col_month, col_year = st.columns(2)
+    month_name = col_month.selectbox("Month", MONTHS, index=today.month - 1)
+    year = col_year.number_input("Year", min_value=2000, max_value=2100, value=today.year, step=1)
+    return label_month(month_name, year)
+
+def draw_income_inputs(month, monthly_budget):
+    if monthly_budget:
+        default_source = monthly_budget[0]["income_source"]
+        default_income = monthly_budget[0]["income"]
+    else:
+        default_source = ""
+        default_income = 0.0
+
+    col_source, col_income = st.columns(2)
+    income_source = col_source.text_input("Income source", value=default_source, key=f"source_{month}")
+    income = col_income.number_input("Expected Income", min_value=0.0, value=float(default_income), step=500.0, key=f"income_{month}")
+    return income_source, income
+
+def draw_summary(income, total_planned, unallocated_income):
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Income", format_pesos(income))
+    col2.metric("Planned Expenses", format_pesos(total_planned))
+    col3.metric("Unallocated", format_pesos(unallocated_income))
+
+    if unallocated_income > 0:
+        st.success(f"Remaining unallocated income: {format_pesos(unallocated_income)}")
+    elif unallocated_income == 0:
+        st.info("All income has been allocated")
+    else:
+        st.error(f"Your planned expenses exceed your income by {format_pesos(-unallocated_income)}")
+
 def draw_category_rows(rows):
     head_name, head_amount, _, _ = st.columns([4, 3, 1, 1])
     head_name.caption("Category")
@@ -82,6 +115,17 @@ def draw_category_rows(rows):
             rows.pop(i)
             st.rerun()
 
+def save_budget(budget, month, income_source, income, rows):
+    if income_source.strip() == "":
+        message_dialog("error", "Please enter an income source.")
+    elif len(rows) == 0:
+        message_dialog("error", "Add at least one category.")
+    else:
+        other_months = [e for e in budget if e["month"] != month]
+        new_entries = budget_rows(month, income_source.strip(), income, rows)
+        data_loader.save_budget_data(other_months + new_entries)
+        message_dialog("success", f"Budget for {month} saved!")
+
 def validate_categoryname(rows, name, skip_index=None):
     if name.strip() == "":
         return "Category name is required."
@@ -94,11 +138,14 @@ def calculate_total_planned(rows):
     total = 0.0
     for row in rows:
         total += row["planned_amount"]
-    return total
+    return round(total, 2)
+
+def calculate_unallocated(income, total_planned):
+    return round(income - total_planned, 2) + 0.0
 
 @st.dialog("Notice")
 def message_dialog(type, message):
-    if type == "success":
+    if kind == "success":
         st.success(message)
     else:
         st.error(message)
@@ -109,27 +156,13 @@ def show_budget_page():
     budget = data_loader.load_budget_data()
     st.title("Current Budget")
 
-    today = date.today()
-    col_month, col_year = st.columns(2)
-    month_name = col_month.selectbox("Month", MONTHS, index=today.month - 1)
-    year = col_year.number_input("Year", min_value=2000, max_value=2100, value=today.year, step=1)
-
-    month = label_month(month_name, year)
+    month = draw_month_picker()
     monthly_budget = [entry for entry in budget if entry["month"] == month]
 
     load_list(month, monthly_budget)
     rows = st.session_state["working_rows"]
- 
-    if monthly_budget:
-        default_source = monthly_budget[0]["income_source"]
-        default_income = monthly_budget[0]["income"]
-    else:
-        default_source = ""
-        default_income = 0.0
 
-    col_source, col_income = st.columns(2)
-    income_source = col_source.text_input("Income source", value=default_source, key=f"source_{month}")
-    income = col_income.number_input("Expected Income", min_value=0.0, value=float(default_income), step=500.0, key=f"income_{month}")
+    income_source, income = draw_income_inputs(month, monthly_budget)
 
     st.subheader(f"{month}'s Budget")
     if len(rows):
@@ -138,31 +171,10 @@ def show_budget_page():
         st.info("No categories yet, add some!")
     if st.button("+ Add Category"):
         category_dialog()
-    
 
     total_planned = calculate_total_planned(rows)
-    unallocated_income = income - total_planned
-
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Income", format_pesos(income))
-    col2.metric("Planned Expenses", format_pesos(total_planned))
-    col3.metric("Unallocated", format_pesos(unallocated_income))
-
-    if unallocated_income > 0:
-        st.success(f"Remaining unallocated income: {format_pesos(unallocated_income)}")
-    elif unallocated_income == 0:
-        st.info("All income has been allocated")
-    else:
-        st.error(f"Your planned expenses exceed your income by {format_pesos(-unallocated_income)}")
+    unallocated_income = calculate_unallocated(income, total_planned)
+    draw_summary(income, total_planned, unallocated_income)
 
     if st.button("Save Budget", type="primary"):
-        if income_source.strip() == "":
-            message_dialog("error", "Please enter an income source.")
-        elif len(rows) == 0:
-            message_dialog("error", "Add at least one category.")
-        else:
-            new_rows = budget_rows(month, income_source.strip(), income, rows)
-            budget = [e for e in budget if e["month"] != month]
-            budget.extend(new_rows)
-            data_loader.save_budget_data(budget)
-            message_dialog("success", f"Budget for {month} saved!")
+        save_budget(budget, month, income_source, income, rows)

@@ -4,20 +4,11 @@ from datetime import date
 
 MONTHS = ["January", "February", "March", "April", "May", "June","July", "August", "September", "October", "November", "December"]
 
+def format_pesos(amount):
+    return f"₱{amount:,.2f}"
+
 def label_month(month_name, year):
     return f"{month_name} {year}"
-
-def get_categories(rows):
-    #selectbox for the dialog, same as get years
-    used = []
-    for row in rows:
-        used.append(row["category"].lower())
-
-    options = []
-    for c in st.session_state["default_categories"]:
-        if c.lower() not in used:
-            options.append(c)
-    return options
 
 def get_starting_rows(month_entries):
     rows = []
@@ -51,22 +42,18 @@ def category_dialog(index=None):
     rows = st.session_state["working_rows"]
 
     if index is None:
-        choice = st.selectbox("Category", get_categories(rows), index=None,placeholder="Pick or type a category", accept_new_options=True)
-        if choice:
-            name = choice
-        else:
-            name = ""
+        name_default = ""
         amount_default = None
     else:
-        name = st.text_input("Category name", value=rows[index]["category"])
+        name_default = rows[index]["category"]
         amount_default = rows[index]["planned_amount"]
+
+    name = st.text_input("Category name", value=name_default)
+    amount = st.number_input("Planned amount", min_value=0.0, value=amount_default, step=100.0, placeholder="e.g. 100.00")
 
     name_error = validate_categoryname(rows, name, index)
     if name_error and name != "":
         st.caption(f":red[{name_error}]")
-
-    amount = st.number_input("Planned amount", min_value=0.0, value=amount_default, step=100.0, placeholder="e.g. 100.00")
-
     error = name_error is not None or amount is None
 
     col_cancel, col_save = st.columns(2)
@@ -88,10 +75,10 @@ def draw_category_rows(rows):
     for i in range(len(rows)):
         col_name, col_amount, col_edit, col_remove = st.columns([4, 3, 1, 1])
         col_name.write(rows[i]["category"])
-        col_amount.write(f"₱{rows[i]['planned_amount']:,.2f}")
-        if col_edit.button("p", key=f"edit_{i}"): #p is a placeholder for now
+        col_amount.write(format_pesos(rows[i]['planned_amount']))
+        if col_edit.button("Edit", icon=":material/edit:", key=f"edit_{i}"):
             category_dialog(i)
-        if col_remove.button("✕", key=f"remove_{i}"): 
+        if col_remove.button("Delete", icon=":material/delete:", key=f"remove_{i}"): 
             rows.pop(i)
             st.rerun()
 
@@ -157,16 +144,16 @@ def show_budget_page():
     unallocated_income = income - total_planned
 
     col1, col2, col3 = st.columns(3)
-    col1.metric("Income", f"{income:,.2f}")
-    col2.metric("Planned Expenses", f"{total_planned:,.2f}")
-    col3.metric("Unallocated", f"{unallocated_income:,.2f}")
-    
+    col1.metric("Income", format_pesos(income))
+    col2.metric("Planned Expenses", format_pesos(total_planned))
+    col3.metric("Unallocated", format_pesos(unallocated_income))
+
     if unallocated_income > 0:
-        st.success(f"Remaining unallocated income: ₱{unallocated_income:,.2f}")
+        st.success(f"Remaining unallocated income: {format_pesos(unallocated_income)}")
     elif unallocated_income == 0:
         st.info("All income has been allocated")
     else:
-        st.error(f"Your planned expenses exceed your income by ₱{-unallocated_income:,.2f}")
+        st.error(f"Your planned expenses exceed your income by {format_pesos(-unallocated_income)}")
 
     if st.button("Save Budget", type="primary"):
         if income_source.strip() == "":

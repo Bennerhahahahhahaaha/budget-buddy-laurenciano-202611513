@@ -15,13 +15,11 @@ def shared_design():
             max-width: 1400px;
             padding: 2rem 2.5rem;
         }
-
         h1, h2, h3 {
             color: #1B5E20;
         }
         </style>
     """, unsafe_allow_html=True)
-
 shared_design()
 
 dashboard = st.Page(dashboard_page.show_dashboard_page, title="Dashboard", default=True)

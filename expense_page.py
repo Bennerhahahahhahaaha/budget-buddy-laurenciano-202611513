@@ -221,28 +221,33 @@ def confirm_delete_dialog(index):
 def show_expense_page():
     budget = data_loader.load_budget_data()
     expenses = data_loader.load_expense_data()
-    st.title("Expenses")
 
-    st.subheader("Add expense")
-    chosen_date, month, category, description, amount = draw_expense_inputs(budget)
-    st.caption(f"This will be recorded under {month}.")
+    #column ratio for the expense history and the add expense, best one is 2.5:1
+    col_history, col_addexpense = st.columns([2.5, 1], gap="large")
+    with col_history:
+        st.subheader("Expense History")
 
-    error = validate_expense(category, description, amount)
-    if error:
-        st.caption(f":gray[{error}]")
-    if st.button("Save expense", type="primary", disabled=error is not None):
-        submit_expense(budget, expenses, chosen_date, month, category, description, amount)
+        expense_history = draw_history_month_picker()
+        month_expenses = get_month_expenses(expenses, expense_history)
+        selected = draw_history(expense_history, month_expenses)
 
-    st.divider()
-    st.subheader("Expense History")
-    expense_history = draw_history_month_picker()
-    month_expenses = get_month_expenses(expenses, expense_history)
-    selected = draw_history(expense_history, month_expenses)
+        if selected is not None:
+            draw_selected_expense(selected)
+            col_edit, col_delete, _ = st.columns([1, 1, 4])
+            if col_edit.button("Edit", icon=":material/edit:", key="edit_expense"):
+                edit_expense_dialog(find_expense_index(expenses, selected))
+            if col_delete.button("Delete", icon=":material/delete:", key="delete_expense"):
+                confirm_delete_dialog(find_expense_index(expenses, selected))
+    with col_addexpense:
+        st.subheader("Add Expense")
+        
+        chosen_date, month, category, description, amount = draw_expense_inputs(budget)
+        st.caption(f"This will be recorded under {month}.")
+        error = validate_expense(category, description, amount)
+        if error:
+            st.caption(f":gray[{error}]")
+        if st.button("Save expense", type="primary", disabled=error is not None):
+            submit_expense(budget, expenses, chosen_date, month, category, description, amount)
 
-    if selected is not None:
-        draw_selected_expense(selected)
-        col_edit, col_delete, _ = st.columns([1, 1, 4])
-        if col_edit.button("Edit", icon=":material/edit:", key="edit_expense"):
-            edit_expense_dialog(find_expense_index(expenses, selected))
-        if col_delete.button("Delete", icon=":material/delete:", key="delete_expense"):
-            confirm_delete_dialog(find_expense_index(expenses, selected), selected)
+
+

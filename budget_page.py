@@ -20,7 +20,7 @@ def get_starting_rows(month_entries):
             rows.append({"category": name, "planned_amount": 0.0})
     return rows
 
-def budget_rows(month, income_source, income, rows):
+def build_budget_entries(month, income_source, income, rows):
     entries = []
     for row in rows:
         entries.append({
@@ -32,7 +32,7 @@ def budget_rows(month, income_source, income, rows):
         })
     return entries
 
-def load_list(month, month_entries):
+def load_working_rows(month, month_entries):
     if st.session_state.get("working_month") != month:
         st.session_state["working_month"] = month
         st.session_state["working_rows"] = get_starting_rows(month_entries)
@@ -51,7 +51,7 @@ def category_dialog(index=None):
     name = st.text_input("Category name", value=name_default)
     amount = st.number_input("Planned amount", min_value=0.0, value=amount_default, step=100.0, placeholder="e.g. 100.00")
 
-    name_error = validate_categoryname(rows, name, index)
+    name_error = validate_category_name(rows, name, index)
     if name_error and name != "":
         st.caption(f":red[{name_error}]")
     error = name_error is not None or amount is None
@@ -106,34 +106,34 @@ def draw_category_rows(rows):
     head_amount.caption("Planned amount")
 
     for i in range(len(rows)):
-        col_name, col_amount, col_edit, col_remove = st.columns([4, 3, 1, 1])
+        col_name, col_amount, col_edit, col_remove = st.columns([4, 3, 2, 2])
         col_name.write(rows[i]["category"])
-        col_amount.write(format_pesos(rows[i]['planned_amount']))
+        col_amount.write(format_pesos(rows[i]["planned_amount"]))
         if col_edit.button("Edit", icon=":material/edit:", key=f"edit_{i}"):
             category_dialog(i)
-        if col_remove.button("Delete", icon=":material/delete:", key=f"remove_{i}"): 
+        if col_remove.button("Delete", icon=":material/delete:", key=f"remove_{i}"):
             rows.pop(i)
             st.rerun()
 
-def save_budget(budget, month, income_source, income, rows):
+def submit_budget(budget, month, income_source, income, rows):
     if income_source.strip() == "":
-        message_dialog("error", "Please enter an income source.")
+        notice_dialog("error", "Please enter an income source.")
     elif len(rows) == 0:
-        message_dialog("error", "Add at least one category.")
+        notice_dialog("error", "Add at least one category.")
     else:
         other_months = [e for e in budget if e["month"] != month]
-        new_entries = budget_rows(month, income_source.strip(), income, rows)
+        new_entries = build_budget_entries(month, income_source.strip(), income, rows)
         data_loader.save_budget_data(other_months + new_entries)
-        message_dialog("success", f"Budget for {month} saved!")
+        notice_dialog("success", f"Budget for {month} saved!")
 
-def validate_categoryname(rows, name, skip_index=None):
+def validate_category_name(rows, name, skip_index=None):
     if name.strip() == "":
         return "Category name is required."
     for i in range(len(rows)):
         if i != skip_index and rows[i]["category"].lower() == name.strip().lower():
             return "That category already exists."
     return None
-    
+
 def calculate_total_planned(rows):
     total = 0.0
     for row in rows:
@@ -144,7 +144,7 @@ def calculate_unallocated(income, total_planned):
     return round(income - total_planned, 2) + 0.0
 
 @st.dialog("Notice")
-def message_dialog(kind, message):
+def notice_dialog(kind, message):
     if kind == "success":
         st.success(message)
     else:
@@ -159,7 +159,7 @@ def show_budget_page():
     month = draw_month_picker()
     monthly_budget = [entry for entry in budget if entry["month"] == month]
 
-    load_list(month, monthly_budget)
+    load_working_rows(month, monthly_budget)
     rows = st.session_state["working_rows"]
 
     income_source, income = draw_income_inputs(month, monthly_budget)
@@ -177,4 +177,4 @@ def show_budget_page():
     draw_summary(income, total_planned, unallocated_income)
 
     if st.button("Save Budget", type="primary"):
-        save_budget(budget, month, income_source, income, rows)
+        submit_budget(budget, month, income_source, income, rows)

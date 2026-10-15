@@ -157,8 +157,8 @@ def find_expense_index(expenses, selected):
             return i
     return None
 
-def delete_expense(expenses, selected):
-    index = find_expense_index(expenses, selected)
+def delete_expense(index):
+    expenses = data_loader.load_expense_data()
     expenses.pop(index)
     data_loader.save_expense_data(expenses)
     st.session_state["history_version"] = st.session_state.get("history_version", 0) + 1
@@ -207,6 +207,17 @@ def edit_expense_dialog(index):
         st.session_state["history_version"] = st.session_state.get("history_version", 0) + 1
         st.rerun()
 
+@st.dialog("Delete expense")
+def confirm_delete_dialog(index):
+    st.warning("Delete this expense? This can't be undone.")
+
+    col_cancel, col_delete = st.columns(2)
+    if col_cancel.button("Cancel", width="stretch"):
+        st.rerun()
+    if col_delete.button("Delete", type="primary", width="stretch"):
+        delete_expense(index)
+        st.rerun()
+
 def show_expense_page():
     budget = data_loader.load_budget_data()
     expenses = data_loader.load_expense_data()
@@ -234,5 +245,4 @@ def show_expense_page():
         if col_edit.button("Edit", icon=":material/edit:", key="edit_expense"):
             edit_expense_dialog(find_expense_index(expenses, selected))
         if col_delete.button("Delete", icon=":material/delete:", key="delete_expense"):
-            delete_expense(expenses, selected)
-            st.rerun()
+            confirm_delete_dialog(find_expense_index(expenses, selected), selected)

@@ -71,7 +71,7 @@ def category_dialog(index=None):
 @st.dialog("Delete category")
 def confirm_delete_dialog(index):
     category = st.session_state["working_rows"][index]["category"]
-    st.warning(f"Delete the category '{category}'? ""This change will affect the current unsaved budget.")
+    st.warning(f"Delete the category '{category}'? " "This change will affect the current unsaved budget.")
 
     col_cancel, col_delete = st.columns(2)
     if col_cancel.button("Cancel", width="stretch"):
@@ -95,36 +95,42 @@ def draw_income_inputs(month, monthly_budget):
         default_source = ""
         default_income = 0.0
 
-    col_source, col_income = st.columns(2)
+    col_source, col_income = st.columns([1, 1.4])
     income_source = col_source.text_input("Income source", value=default_source, key=f"source_{month}")
     income = col_income.number_input("Expected Income", min_value=0.0, value=float(default_income), step=500.0, key=f"income_{month}")
     return income_source, income
 
 def draw_summary(income, total_planned, unallocated_income):
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Income", format_pesos(income))
-    col2.metric("Planned Expenses", format_pesos(total_planned))
-    col3.metric("Unallocated", format_pesos(unallocated_income))
+
+    st.metric("Income", format_pesos(income))
+    st.metric("Planned Expenses", format_pesos(total_planned))
+    st.metric("Unallocated", format_pesos(unallocated_income))
 
     if unallocated_income > 0:
-        st.success(f"Remaining unallocated income: {format_pesos(unallocated_income)}")
+        st.success(
+            f"Remaining unallocated income: "
+            f"{format_pesos(unallocated_income)}"
+        )
     elif unallocated_income == 0:
         st.info("All income has been allocated")
     else:
-        st.error(f"Your planned expenses exceed your income by {format_pesos(-unallocated_income)}")
+        st.error(
+            f"Your planned expenses exceed your income by "
+            f"{format_pesos(-unallocated_income)}"
+        )
 
 def draw_category_rows(rows):
-    head_name, head_amount, _, _ = st.columns([4, 3, 2, 2])
+    head_name, head_amount, _, _ = st.columns([4, 3, 1.5, 1.5])
     head_name.caption("Category")
     head_amount.caption("Planned amount")
 
     for i in range(len(rows)):
-        col_name, col_amount, col_edit, col_remove = st.columns([4, 3, 2, 2])
+        col_name, col_amount, col_edit, col_remove = st.columns([4, 3, 1.5, 1.5], vertical_alignment="center")
         col_name.write(rows[i]["category"])
         col_amount.write(format_pesos(rows[i]["planned_amount"]))
-        if col_edit.button("Edit", icon=":material/edit:", key=f"edit_{i}"):
+        if col_edit.button("Edit", icon=":material/edit:", key=f"edit_{i}", width="stretch"):
             category_dialog(i)
-        if col_remove.button("Delete", icon=":material/delete:", key=f"remove_{i}"):
+        if col_remove.button("Delete", icon=":material/delete:", key=f"remove_{i}", width="stretch"):
             confirm_delete_dialog(i)
 
 def submit_budget(budget, month, income_source, income, rows):
@@ -170,23 +176,26 @@ def show_budget_page():
 
     month = draw_month_picker()
     monthly_budget = [entry for entry in budget if entry["month"] == month]
-
     load_working_rows(month, monthly_budget)
     rows = st.session_state["working_rows"]
 
     income_source, income = draw_income_inputs(month, monthly_budget)
-
-    st.subheader(f"{month}'s Budget")
-    if len(rows):
-        draw_category_rows(rows)
-    else:
-        st.info("No categories yet, add some!")
-    if st.button("+ Add Category"):
-        category_dialog()
-
     total_planned = calculate_total_planned(rows)
     unallocated_income = calculate_unallocated(income, total_planned)
-    draw_summary(income, total_planned, unallocated_income)
 
-    if st.button("Save Budget", type="primary"):
-        submit_budget(budget, month, income_source, income, rows)
+    col_categories, col_summary = st.columns([1.7, 1])
+
+    with col_categories:
+        st.subheader(f"{month}'s Budget")
+        if len(rows):
+            draw_category_rows(rows)
+        else:
+            st.info("No categories yet, add some!")
+        if st.button("+ Add Category"):
+            category_dialog()
+
+    with col_summary:
+        st.subheader("Budget Summary")
+        draw_summary(income, total_planned, unallocated_income)
+        if st.button("Save Budget", type="primary", width="stretch"):
+            submit_budget(budget, month, income_source, income, rows)

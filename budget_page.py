@@ -3,20 +3,9 @@ import data_loader
 from datetime import date
 
 MONTHS = ["January", "February", "March", "April", "May", "June","July", "August", "September", "October", "November", "December"]
-CATEGORIES = ["Food", "Transportation", "School Supplies", "Contribution", "Rent", "Bills"]
 
 def label_month(month_name, year):
     return f"{month_name} {year}"
-
-def get_years(budget):
-    #get years with saved value for the year selectbox
-    years = []
-    for entry in budget:
-        year = int(entry["month"].split()[-1])
-        if year not in years:
-            years.append(year)
-    years.sort()
-    return years
 
 def get_categories(rows):
     #selectbox for the dialog, same as get years
@@ -25,25 +14,19 @@ def get_categories(rows):
         used.append(row["category"].lower())
 
     options = []
-    for c in CATEGORIES:
+    for c in st.session_state["default_categories"]:
         if c.lower() not in used:
             options.append(c)
     return options
 
-def parse_year(choice, default):
-    if choice is None:
-        return default
-    try: year = int(choice)
-    except ValueError:
-        return None
-    if 2000 <= year <= 2100:
-        return year
-    return None
-
 def get_starting_rows(month_entries):
     rows = []
-    for entry in month_entries:
-        rows.append({"category": entry["category"], "planned_amount": entry["planned_amount"]})
+    if month_entries:
+        for entry in month_entries:
+            rows.append({"category": entry["category"], "planned_amount": entry["planned_amount"]})
+    else:
+        for name in st.session_state["default_categories"]:
+            rows.append({"category": name, "planned_amount": 0.0})
     return rows
 
 def budget_rows(month, income_source, income, rows):
@@ -139,20 +122,12 @@ def show_budget_page():
     budget = data_loader.load_budget_data()
     st.title("Current Budget")
 
-
-    
     today = date.today()
-    saved_years = get_years(budget)
     col_month, col_year = st.columns(2)
     month_name = col_month.selectbox("Month", MONTHS, index=today.month - 1)
-    year_choice = col_year.selectbox("Year", [str(y) for y in saved_years], index=None, placeholder=str(today.year), accept_new_options=True, key="year_pick")
+    year = col_year.number_input("Year", min_value=2000, max_value=2100, value=today.year, step=1)
 
-    year = parse_year(year_choice, today.year)
-    if year is None:
-        st.error("Enter a year between 2000 and 2100.")
-        return
-    
-    month = label_month(month_name, int(year)) 
+    month = label_month(month_name, year)
     monthly_budget = [entry for entry in budget if entry["month"] == month]
 
     load_list(month, monthly_budget)

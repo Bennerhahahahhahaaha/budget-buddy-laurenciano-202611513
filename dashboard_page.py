@@ -1,9 +1,9 @@
 import streamlit as st
 import matplotlib.pyplot as plt
+import numpy as np
 import data_loader
 import budget_page
 import expense_page
-
 
 def get_month_budget(budget, month):
     budget_entries = []
@@ -47,46 +47,51 @@ def draw_pie_chart(rows):
     if len(values) == 0:
         st.info("Nothing planned yet, so there is no chart to show.")
         return
+    
+    colors = ["#81C784", "#A5D6A7", "#C8E6C9", "#F2C14E", "#E08E45", "#4DB6AC", "#9CCC65", "#BCAAA4"]
+    plt.figure(figsize=(5,4), facecolor="#E8F5E9")
+    plt.pie(values, labels=labels, colors=colors, autopct="%1.1f%%")
 
-    fig, ax = plt.subplots()
-    ax.pie(values, labels=labels, autopct="%1.1f%%", startangle=90)
-    ax.axis("equal")
-    st.pyplot(fig)
-    plt.close(fig)
-
+    st.pyplot(plt.gcf())
+    plt.close()
 
 def draw_bar_chart(rows):
     st.subheader("Planned vs actual")
+
     if len(rows) == 0:
         st.info("No categories to compare.")
         return
 
     labels = []
-    planned_values = []
-    spent_values = []
+    planned = []
+    spent = []
     for row in rows:
         labels.append(row["category"])
-        planned_values.append(row["planned"])
-        spent_values.append(row["spent"])
+        planned.append(row["planned"])
+        spent.append(row["spent"])
+    
+    colors = ["#A5D6A7", "#1B5E20"]
 
-    positions = list(range(len(labels)))
+    x = np.arange(len(labels))
     width = 0.4
-    planned_x = []
-    spent_x = []
-    for p in positions:
-        planned_x.append(p - width / 2)
-        spent_x.append(p + width / 2)
 
-    fig, ax = plt.subplots()
-    ax.bar(planned_x, planned_values, width, label="Planned")
-    ax.bar(spent_x, spent_values, width, label="Actual")
-    ax.set_xticks(positions)
-    ax.set_xticklabels(labels, rotation=45, ha="right")
-    ax.set_ylabel("Pesos")
-    ax.legend()
-    fig.tight_layout()
-    st.pyplot(fig)
-    plt.close(fig)
+    plt.figure(figsize=(5, 4), facecolor="#E8F5E9")
+    ax = plt.gca()
+    ax.set_facecolor("#E8F5E9")
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    plt.bar(x - width / 2, planned, width, label="Planned", color=colors[0])
+    plt.bar(x + width / 2, spent, width, label="Actual", color=colors[1])
+
+    plt.xticks(x, labels, rotation=45, ha="right")
+    plt.ylabel("Pesos")
+    plt.legend()
+    plt.tight_layout()
+    st.pyplot(plt.gcf())
+    plt.close()
+
+
 
 def breakdown_table(rows):
     st.subheader("Budget Breakdown")

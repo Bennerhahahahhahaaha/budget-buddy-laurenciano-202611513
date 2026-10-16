@@ -5,7 +5,8 @@ import expense_page
 
 DEFAULT_CATEGORIES = ["Food", "Transportation", "School Supplies", "Contribution", "Rent", "Bills"]
 
-st.set_page_config(page_title="Budget Buddy Benner!", layout="wide")
+st.set_page_config(page_title="Budget Buddy Benner!", layout="wide", page_icon="green_apple.png")
+st.logo("green_apple.png")
 st.session_state["default_categories"] = DEFAULT_CATEGORIES
 
 def shared_design():
@@ -45,12 +46,22 @@ def shared_design():
             color: #1B5E20;
             font-weight: 700;
         }
+
+        [data-testid="stSidebarNav"] a,
+        [data-testid="stSidebarNav"] a span {
+            font-size: 1.15rem;
+        }
+
+        [data-testid="stSidebarNav"] li {
+            margin-bottom: 0.25rem;
+        }
         </style>
     """, unsafe_allow_html=True)
 shared_design()
 
-dashboard = st.Page(dashboard_page.show_dashboard_page, title="Home", default=True)
-budgets = st.Page(budget_page.show_budget_page, title="Budgets")
-expenses = st.Page(expense_page.show_expense_page, title="Expenses")
+dashboard = st.Page(dashboard_page.show_dashboard_page, title="Home", icon=":material/home:", default=True)
+budgets = st.Page(budget_page.show_budget_page, title="Budgets", icon=":material/account_balance_wallet:")
+expenses = st.Page(expense_page.show_expense_page, title="Expenses", icon=":material/receipt_long:")
+
 page = st.navigation([dashboard, budgets, expenses])
 page.run()

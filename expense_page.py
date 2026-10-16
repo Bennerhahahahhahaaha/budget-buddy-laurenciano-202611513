@@ -1,21 +1,11 @@
 import streamlit as st
-import data_loader
 from datetime import date
-
-
-MONTHS = ["January", "February", "March", "April", "May", "June","July", "August", "September", "October", "November", "December"]
-
-def format_pesos(amount):
-    return f"₱{amount:,.2f}"
-
-def label_month(month_name, year):
-    return f"{month_name} {year}"
+from data_loader import load_budget_data, load_expense_data, save_expense_data, add_expense
+from budget_page import MONTHS, format_pesos, label_month
 
 def label_month_from_date(chosen_date):
     month_name = MONTHS[chosen_date.month - 1]
     return label_month(month_name, chosen_date.year)
-
-#format_pesos, label_month copy pasted from budget_page instead of importing
 
 def get_expense_date(expense):
     return expense["date"]
@@ -78,7 +68,7 @@ def build_expense_entry(chosen_date, month, category, description, amount):
 #submit_budget 
 def submit_expense(budget, expenses, chosen_date, month, category, description, amount):
     entry = build_expense_entry(chosen_date, month, category, description, amount)
-    data_loader.add_expense(entry)
+    add_expense(entry)
     st.session_state["expense_form_version"] = st.session_state.get("expense_form_version", 0) + 1
     notice_dialog("success", build_confirmation_message(budget, expenses, month, category, amount))
 
@@ -158,9 +148,9 @@ def find_expense_index(expenses, selected):
     return None
 
 def delete_expense(index):
-    expenses = data_loader.load_expense_data()
+    expenses = load_expense_data()
     expenses.pop(index)
-    data_loader.save_expense_data(expenses)
+    save_expense_data(expenses)
     st.session_state["history_version"] = st.session_state.get("history_version", 0) + 1
 
 #same dialog from budget page
@@ -175,8 +165,8 @@ def notice_dialog(kind, message):
 
 @st.dialog("Edit expense")
 def edit_expense_dialog(index):
-    budget = data_loader.load_budget_data()
-    expenses = data_loader.load_expense_data()
+    budget = load_budget_data()
+    expenses = load_expense_data()
     old = expenses[index]
 
     chosen_date = st.date_input("Date", value=date.fromisoformat(old["date"]))
@@ -203,7 +193,7 @@ def edit_expense_dialog(index):
         st.rerun()
     if col_save.button("Save changes", type="primary", disabled=error is not None, width="stretch"):
         expenses[index] = build_expense_entry(chosen_date, month, category, description, amount)
-        data_loader.save_expense_data(expenses)
+        save_expense_data(expenses)
         st.session_state["history_version"] = st.session_state.get("history_version", 0) + 1
         st.rerun()
 
@@ -219,13 +209,13 @@ def confirm_delete_dialog(index):
         st.rerun()
 
 def show_expense_page():
-    budget = data_loader.load_budget_data()
-    expenses = data_loader.load_expense_data()
+    budget = load_budget_data()
+    expenses = load_expense_data()
 
     #column ratio for the expense history and the add expense, best one is 2.5:1
     col_history, col_addexpense = st.columns([2.5, 1], gap="large")
     with col_history:
-        st.subheader("Expense History")
+        st.title("Expense History")
 
         expense_history = draw_history_month_picker()
         month_expenses = get_month_expenses(expenses, expense_history)
@@ -248,6 +238,3 @@ def show_expense_page():
             st.caption(f":gray[{error}]")
         if st.button("Save expense", type="primary", disabled=error is not None):
             submit_expense(budget, expenses, chosen_date, month, category, description, amount)
-
-
-

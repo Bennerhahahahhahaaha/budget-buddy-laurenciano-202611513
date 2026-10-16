@@ -1,5 +1,5 @@
 import streamlit as st
-import data_loader
+from data_loader import load_budget_data, save_budget_data
 from datetime import date
 
 MONTHS = ["January", "February", "March", "April", "May", "June","July", "August", "September", "October", "November", "December"]
@@ -141,7 +141,7 @@ def submit_budget(budget, month, income_source, income, rows):
     else:
         other_months = [e for e in budget if e["month"] != month]
         new_entries = build_budget_entries(month, income_source.strip(), income, rows)
-        data_loader.save_budget_data(other_months + new_entries)
+        save_budget_data(other_months + new_entries)
         notice_dialog("success", f"Budget for {month} saved!")
 
 def validate_category_name(rows, name, skip_index=None):
@@ -171,7 +171,7 @@ def notice_dialog(kind, message):
         st.rerun()
 
 def show_budget_page():
-    budget = data_loader.load_budget_data()
+    budget = load_budget_data()
     st.title("Current Budget")
 
     month = draw_month_picker()

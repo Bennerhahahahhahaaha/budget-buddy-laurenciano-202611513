@@ -11,18 +11,45 @@ st.session_state["default_categories"] = DEFAULT_CATEGORIES
 def shared_design():
     st.markdown("""
         <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap');
+
+        h1, h2, h3, p, label, li,
+        [data-testid="stMetricLabel"],
+        [data-testid="stMetricValue"] {
+            font-family: 'Nunito', sans-serif;
+        }
+
         .block-container {
             max-width: 1400px;
             padding: 2rem 2.5rem;
         }
+
         h1, h2, h3 {
             color: #1B5E20;
+            font-weight: 700;
+        }
+
+        [data-testid="stMetricLabel"] {
+            color: #4C6B50;
+        }
+
+        [data-testid="stMetric"] {
+            background-color: #FFFFFF;
+            border: 1px solid #A5D6A7;
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            box-shadow: 0 2px 6px rgba(27, 94, 32, 0.08);
+        }
+
+        [data-testid="stMetricValue"] {
+            color: #1B5E20;
+            font-weight: 700;
         }
         </style>
     """, unsafe_allow_html=True)
 shared_design()
 
-dashboard = st.Page(dashboard_page.show_dashboard_page, title="Dashboard", default=True)
+dashboard = st.Page(dashboard_page.show_dashboard_page, title="Home", default=True)
 budgets = st.Page(budget_page.show_budget_page, title="Budgets")
 expenses = st.Page(expense_page.show_expense_page, title="Expenses")
 page = st.navigation([dashboard, budgets, expenses])

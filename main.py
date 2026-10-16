@@ -1,11 +1,11 @@
 import streamlit as st
-import dashboard_page
-import budget_page
-import expense_page
+from dashboard_page import show_dashboard_page
+from budget_page import show_budget_page
+from expense_page import show_expense_page
 
 DEFAULT_CATEGORIES = ["Food", "Transportation", "School Supplies", "Contribution", "Rent", "Bills"]
 
-st.set_page_config(page_title="Budget Buddy Benner!", layout="wide", page_icon="green_apple.png")
+st.set_page_config(page_title="Budget Buddy!", layout="wide", page_icon="green_apple.png")
 st.logo("green_apple.png")
 st.session_state["default_categories"] = DEFAULT_CATEGORIES
 
@@ -55,13 +55,23 @@ def shared_design():
         [data-testid="stSidebarNav"] li {
             margin-bottom: 0.25rem;
         }
+        .st-key-remaining_card [data-testid="stMetricValue"] {
+            color: #C62828;
+        }
+        [data-testid="stSidebarHeader"] img,
+        [data-testid="stLogo"] {
+            height: 3.5rem;
+        }
         </style>
     """, unsafe_allow_html=True)
 shared_design()
 
-dashboard = st.Page(dashboard_page.show_dashboard_page, title="Home", icon=":material/home:", default=True)
-budgets = st.Page(budget_page.show_budget_page, title="Budgets", icon=":material/account_balance_wallet:")
-expenses = st.Page(expense_page.show_expense_page, title="Expenses", icon=":material/receipt_long:")
+dashboard = st.Page(show_dashboard_page, title="Home", icon=":material/home:", default=True)
+budgets = st.Page(show_budget_page, title="Budgets", icon=":material/account_balance_wallet:")
+expenses = st.Page(show_expense_page, title="Expenses", icon=":material/receipt_long:")
+
+st.session_state["page_budgets"] = budgets
+st.session_state["page_expenses"] = expenses
 
 page = st.navigation([dashboard, budgets, expenses])
 page.run()

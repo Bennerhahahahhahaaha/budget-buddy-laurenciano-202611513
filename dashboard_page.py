@@ -1,6 +1,5 @@
 import streamlit as st
 import matplotlib.pyplot as plt
-import numpy as np
 from data_loader import load_budget_data, load_expense_data
 from budget_page import format_pesos, calculate_total_planned, draw_month_picker
 from expense_page import calculate_category_spent, get_month_expenses, calculate_total_spent
@@ -72,7 +71,7 @@ def draw_bar_chart(rows):
     
     colors = ["#A5D6A7", "#1B5E20"]
 
-    x = np.arange(len(labels))
+    x = list(range(len(categories)))
     width = 0.4
 
     plt.figure(figsize=(5, 4), facecolor="#E8F5E9")

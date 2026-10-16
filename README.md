@@ -39,4 +39,6 @@ Windows (PowerShell): 
 1. Without clicking Save Budget, the changes you're working on aren't saved so be sure to save them!
 2. Only 1 income source is allowed, so multiple income sources is unsupported.
 3. The font is loaded from google fonts so the website doesn't load the font.
-4. No Dark Mode
+4. Saving a budget, then deleting that when it has expenses under it will not show on the graphs
+5. Unplanned expenses are not supported
+6. No dark mode

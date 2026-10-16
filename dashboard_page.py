@@ -1,4 +1,5 @@
 import streamlit as st
+import matplotlib.pyplot as plt
 import data_loader
 import budget_page
 import expense_page
@@ -19,6 +20,39 @@ def get_month_income(month_budget):
 
 def calculate_remaining(income, total_spent):
     return round(income - total_spent, 2) + 0.0
+
+def breakdown(month_budget, month_expense):
+    rows = []
+    for entry in month_budget:
+        planned = entry["planned_amount"]
+        spent = expense_page.calculate_category_spent(month_expense, entry["month"], entry["category"])
+        remaining = round(planned - spent, 2) + 0.0
+        rows.append({
+            "category": entry["category"],
+            "planned": planned,
+            "spent": spent,
+            "remaining": remaining, 
+        })
+    return rows
+
+def draw_pie_chart(rows):
+    st.subheader("Planned budget")
+    labels = []
+    values = []
+    for row in rows:
+        if row["planned"] > 0:
+            labels.append(row["category"])
+            values.append(row["planned"])
+
+    if len(values) == 0:
+        st.info("Nothing planned yet, so there is no chart to show.")
+        return
+
+    fig, ax = plt.subplots()
+    ax.pie(values, labels=labels, autopct="%1.1f%%", startangle=90)
+    ax.axis("equal")
+    st.pyplot(fig)
+    plt.close(fig)
 
 def draw_dashboard_summary(income, planned, spent, remaining):
     col_income, col_planned, col_spent, col_remaining = st.columns(4)
@@ -47,6 +81,12 @@ def show_dashboard_page():
     planned = budget_page.calculate_total_planned(month_budget)
     spent = expense_page.calculate_total_spent(month_expenses)
     remaining = calculate_remaining(income, spent)
+    rows = breakdown(month_budget, month_expenses)
 
     st.subheader(f"What's up on {month}")
     draw_dashboard_summary(income, planned, spent, remaining)
+
+    col_pie, col_bar = st.columns(2)
+    with col_pie:
+        draw_pie_chart(rows)
+    #with col_bar: mamaya 

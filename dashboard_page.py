@@ -21,6 +21,17 @@ def get_month_income(month_budget):
 def calculate_remaining(income, total_spent):
     return round(income - total_spent, 2) + 0.0
 
+def calculate_unplanned(month_budget, month_expenses):
+    planned_categories = []
+    for entry in month_budget:
+        planned_categories.append(entry["category"])
+
+    total = 0.0
+    for expense in month_expenses:
+        if expense["category"] not in planned_categories:
+            total += expense["amount"]
+    return round(total, 2)
+
 def getrows(month_budget, month_expense):
     rows = []
     for entry in month_budget:
@@ -32,6 +43,14 @@ def getrows(month_budget, month_expense):
             "planned": planned,
             "spent": spent,
             "remaining": remaining, 
+        })
+    unplanned = calculate_unplanned(month_budget, month_expense)
+    if unplanned > 0:
+        rows.append({
+            "category": "Unplanned",
+            "planned": 0.0,
+            "spent": unplanned,
+            "remaining": round(0.0 - unplanned, 2) + 0.0,
         })
     return rows
 
@@ -92,7 +111,6 @@ def draw_bar_chart(rows):
     plt.close()
 
 
-
 def breakdown_table(rows):
     st.subheader("Budget Breakdown")
     if len(rows) == 0:
@@ -136,14 +154,14 @@ def show_dashboard_page():
     budget = data_loader.load_budget_data()
     expenses = data_loader.load_expense_data()
 
-    st.title("Dashboard")
+    st.title("Budget Buddy!")
     month = budget_page.draw_month_picker()
 
     month_budget = get_month_budget(budget, month)
     month_expenses = expense_page.get_month_expenses(expenses, month)
 
     if len(month_budget) == 0:
-        st.info(f"No budget saved for {month} yet. Set it up first here!.") #Set up hyperlink here soon
+        st.info(f"No budget saved for {month} yet. Set it up first here!") #Set up hyperlink here soon
 
     income = get_month_income(month_budget)
     planned = budget_page.calculate_total_planned(month_budget)

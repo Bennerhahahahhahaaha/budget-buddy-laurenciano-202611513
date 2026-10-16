@@ -45,7 +45,7 @@ def draw_pie_chart(rows):
             values.append(row["planned"])
 
     if len(values) == 0:
-        st.info("Nothing planned yet, so there is no chart to show.")
+        st.info("Nothing planned yet, set up your budget and see a chart here!")
         return
     
     colors = ["#81C784", "#A5D6A7", "#C8E6C9", "#F2C14E", "#E08E45", "#4DB6AC", "#9CCC65", "#BCAAA4"]
@@ -56,7 +56,7 @@ def draw_pie_chart(rows):
     plt.close()
 
 def draw_bar_chart(rows):
-    st.subheader("Planned vs actual")
+    st.subheader("Planned vs Actual Expenses")
 
     if len(rows) == 0:
         st.info("No categories to compare.")
@@ -95,7 +95,7 @@ def draw_bar_chart(rows):
 def breakdown_table(rows):
     st.subheader("Budget Breakdown")
     if len(rows) == 0:
-        st.info("No categories yet. Setup your budget first here!")
+        st.info("No categories yet. Setup your first budget first!")
         return
     
     display_rows = []
